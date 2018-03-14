@@ -1,77 +1,114 @@
 /**
  * Your header documentation here for _listen
  *    For your reference...
- * 		event will hold an Event object with the pixels in
- *   	event.detail.data and the timestamp in event.timeStamp
+ *      event will hold an Event object with the pixels in
+ *      event.detail.data and the timestamp in event.timeStamp
  */
 
- let isTapped = [];
- let referenceBrightness = 0, currentTime;
- const THRESHOLD = 20;
+// Using 2 dimensional array to store the 5x5 tap code
+const tapCode = [['e','t','a','n','d'],['o','i','r','u','c'],['s','h','m','f','p'],['l','y','g','v','j'],['w','b','x','q','z']];
+
+let code = [];
+let referenceBrightness = 0, currentBrightness = 0, startTime = 0, endTime = 0,  timeDiff = 0;
+let hasStarted = false, status = true, preTermination;
+const THRESHOLD = 50;
 
 _listen = function(event)
-{
-	let greyscale = [];
-	let currentBrightness;
+{   
+    let greyscale = [];
 
-	// To check what kind of data is being logged ( for debugging )
-	// console.log(event.detail.data);
-	console.log(event.timeStamp);
+    // Converting the RGBA values to greyscale
+    for (let counter = 0; counter < event.detail.data.length; counter +=4 ) {
+        let average = (event.detail.data[counter]+event.detail.data[counter+1]+event.detail.data[counter+2])/3;
+        greyscale.push(average);
 
-	for (let counter = 0; counter < event.detail.data.length; counter +=4 ) {
-		let average = (event.detail.data[counter]+event.detail.data[counter+1]+event.detail.data[counter+2])/3;
-		greyscale.push(average);
+    }
 
-	}
+    // Assume that the brightness level remains the same
+    // for the first few milliseconds, we 
+    // get hold of the brightness level as reference as NO-TAP
 
-	// Assume that the brightness level remains the same
-	// for the first 200ms ( average of 10 values), we 
-	// get hold of the brightness level as reference as NO-TAP
+    // Get the average of middle 10 pixels
+    currentBrightness = greyscale.slice(195,205).reduce((elem1,elem2) => elem1 +elem2) / 10;
 
-	// Get the average of first 10 pixels
-	let averageValue = greyscale.slice(0,10).reduce((elem1,elem2) => elem1 +elem2) / 10;
+    if (referenceBrightness === 0) {
+        referenceBrightness = currentBrightness;        
+    }
 
-	if (event.timeStamp < 200) {
+    // Starting the timer when first encounter a flash
+    if (status === true && currentBrightness > referenceBrightness + THRESHOLD) {
 
-		if (referenceBrightness === 0 ) {
-			referenceBrightness = averageValue;
-		} else {
-			referenceBrightness = (referenceBrightness + averageValue)/2;
-		}
-		
-	} else {
-		currentBrightness = averageValue;
-	}
+        code.push("*");
 
-	// Starting the timer
-	if (currentBrightness > referenceBrightness + THRESHOLD) {
-		currentTime = event.timeStamp;
-		isTapped[0] = true;
-	}
+        // Check if half gap is way longer than the tap
+        ((event.timeStamp - endTime) > timeDiff + 40) ? code.push(" ") : code.push("");
 
+        startTime = event.timeStamp;
+        hasStarted = true;
+        status = false; 
+    }
 
-	
-	(referenceBrightness > currentBrightness + THRESHOLD) ? isTapped.push(true) : isTapped.push(false);
+    // End the timer when first encounter no flash
+    if (hasStarted && currentBrightness < referenceBrightness + THRESHOLD) {
 
-	//console.log(isTapped);
+        endTime = event.timeStamp;
+        timeDiff = endTime - startTime;
+        hasStarted = false;
+        status = true;
+    }
+
+    // Checking for premature termination
+    ((event.timeStamp - endTime) > 4*timeDiff) ? preTermination = true: preTermination = false;
 };
 
 /**
- * Your header documentation here for clear
+ * Resets all the data to be able to for call the
+ * listen function once again
  */
 clear = function()
 {
-	// your code here
+    // your code here
+    code = [];
+    referenceBrightness = 0;
+    currentBrightness = 0;
+    startTime = 0;
+    endTime = 0;
+    timeDiff = 0;
+    hasStarted = false, status = true;
+    document.getElementById("rx-translated").innerHTML = "";
+
 };
 
 /**
- * Your header documentation here for translate
+ * Translates the tap code into human-readable format
+ * Includes checking if 
  */
 translate = function()
 {
-	// your code here
-};
 
-// Using 2 dimensional array to store the 5x5 tap code
-const TAPCODE = [['e','t','a','n','d'],['o','i','r','u','c'],['s','h','m','f','p'],['l','y','g','v','j'],['w','b','x','q','z']];
+    let tmp = code.join("");
+    let subCode = tmp.split(" ").slice(1);
+    let translatedStr = "";
+    console.log(tmp);
+    console.log(subCode);
+
+    for (let i = 0; i < subCode.length -1 ; i += 2)
+    {
+        let row = subCode[i].length - 1;
+        let column = subCode[i+1].length - 1;
+        let char = tapCode[row][column];
+        translatedStr += char;
+    }
+
+    translatedStr = translatedStr.replace(/(wuw)/g, " ");
+    translatedStr = translatedStr.replace(/(qc)/g, "k");
+
+
+
+    if (preTermination) {
+        document.getElementById("rx-translated").innerHTML = translatedStr;
+    } else {
+        document.getElementById("rx-translated").innerHTML = translatedStr + " (Premature Termination)";
+    }
+};
 
