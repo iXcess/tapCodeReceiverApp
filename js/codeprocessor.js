@@ -1,17 +1,22 @@
 /**
- * Your header documentation here for _listen
- *    For your reference...
- *      event will hold an Event object with the pixels in
- *      event.detail.data and the timestamp in event.timeStamp
+ * Codeprocessor.js performs backend code processing of the received video stream data.
+ * This data is then translated into a predefined human-readable format and displayed in the browser.
+ * 
+ * Contributor:
+ * Kok Yuan Ting    29269016
+ * Lau Lee Yan
+ * Anamfatimah
+ * Liew Ze Ching
+ *
+ * Last modified : 15/3/18
  */
 
-// Using 2 dimensional array to store the 5x5 tap code
-const tapCode = [['e','t','a','n','d'],['o','i','r','u','c'],['s','h','m','f','p'],['l','y','g','v','j'],['w','b','x','q','z']];
-
+const THRESHOLD = 50;
 let code = [];
 let referenceBrightness = 0, currentBrightness = 0, startTime = 0, endTime = 0,  timeDiff = 0;
-let hasStarted = false, status = true, preTermination;
-const THRESHOLD = 50;
+let hasStarted = false, darkness = true, preTermination = null;
+let rxTranslated = document.getElementById("rx-translated");
+let rxCode = document.getElementById("rx-code");
 
 _listen = function(event)
 {   
@@ -24,28 +29,25 @@ _listen = function(event)
 
     }
 
-    // Assume that the brightness level remains the same
-    // for the first few milliseconds, we 
-    // get hold of the brightness level as reference as NO-TAP
-
     // Get the average of middle 10 pixels
     currentBrightness = greyscale.slice(195,205).reduce((elem1,elem2) => elem1 +elem2) / 10;
 
+    // Brightness level remains the same for the first few milliseconds, we 
+    // get hold of the brightness level as reference as NO-TAP
     if (referenceBrightness === 0) {
         referenceBrightness = currentBrightness;        
     }
 
     // Starting the timer when first encounter a flash
-    if (status === true && currentBrightness > referenceBrightness + THRESHOLD) {
-
-        code.push("*");
+    if (darkness === true && currentBrightness > referenceBrightness + THRESHOLD) {
 
         // Check if half gap is way longer than the tap
         ((event.timeStamp - endTime) > timeDiff + 40) ? code.push(" ") : code.push("");
 
+        code.push("*");
         startTime = event.timeStamp;
         hasStarted = true;
-        status = false; 
+        darkness = false; 
     }
 
     // End the timer when first encounter no flash
@@ -54,7 +56,7 @@ _listen = function(event)
         endTime = event.timeStamp;
         timeDiff = endTime - startTime;
         hasStarted = false;
-        status = true;
+        darkness = true;
     }
 
     // Checking for premature termination
@@ -62,35 +64,27 @@ _listen = function(event)
 };
 
 /**
- * Resets all the data to be able to for call the
- * listen function once again
+ * Resets all the data to be able to for call the listen function once again
  */
 clear = function()
 {
-    // your code here
     code = [];
-    referenceBrightness = 0;
-    currentBrightness = 0;
-    startTime = 0;
-    endTime = 0;
-    timeDiff = 0;
-    hasStarted = false, status = true;
-    document.getElementById("rx-translated").innerHTML = "";
-
+    referenceBrightness = 0; currentBrightness = 0; startTime = 0; endTime = 0; timeDiff = 0;
+    hasStarted = false, darkness = true;
+    rxTranslated.innerHTML = ""; rxCode.innerHTML = "";
 };
 
 /**
- * Translates the tap code into human-readable format
- * Includes checking if 
+ * Translates the tap code into human-readable format and display the results in the inner HTML tag
  */
 translate = function()
 {
+    // Using 2 dimensional array to store the 5x5 tap code
+    const tapCode = [['e','t','a','n','d'],['o','i','r','u','c'],['s','h','m','f','p'],['l','y','g','v','j'],['w','b','x','q','z']];
 
     let tmp = code.join("");
     let subCode = tmp.split(" ").slice(1);
     let translatedStr = "";
-    console.log(tmp);
-    console.log(subCode);
 
     for (let i = 0; i < subCode.length -1 ; i += 2)
     {
@@ -100,15 +94,13 @@ translate = function()
         translatedStr += char;
     }
 
+    // Using regex replacement expression, refer to 
+    // https://developer.mozilla.org/en-US/docs/Web/JavaScript/Guide/Regular_Expressions
     translatedStr = translatedStr.replace(/(wuw)/g, " ");
     translatedStr = translatedStr.replace(/(qc)/g, "k");
 
-
-
-    if (preTermination) {
-        document.getElementById("rx-translated").innerHTML = translatedStr;
-    } else {
-        document.getElementById("rx-translated").innerHTML = translatedStr + " (Premature Termination)";
-    }
+    // Setting the output
+    rxCode.innerHTML = tmp;
+    (preTermination) ? rxTranslated.innerHTML = translatedStr : rxTranslated.innerHTML = translatedStr + " (Premature Termination)";
 };
 
