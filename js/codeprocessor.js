@@ -17,6 +17,7 @@ let referenceBrightness = 0, currentBrightness = 0, startTime = 0, endTime = 0, 
 let hasStarted = false, darkness = true, preTermination = null;
 let rxTranslated = document.getElementById("rx-translated");
 let rxCode = document.getElementById("rx-code");
+let output = '';
 
 _listen = function(event)
 {   
@@ -42,9 +43,12 @@ _listen = function(event)
     if (darkness === true && currentBrightness > referenceBrightness + THRESHOLD) {
 
         // Check if half gap is way longer than the tap
-        ((event.timeStamp - endTime) > timeDiff + 40) ? code.push(" ") : code.push("");
-
+        ((event.timeStamp - endTime) > timeDiff + 50) ? code.push(" ") : code.push("");
+		
         code.push("*");
+		output = code.join("");
+		rxCode.innerHTML = output;
+		
         startTime = event.timeStamp;
         hasStarted = true;
         darkness = false; 
@@ -61,6 +65,7 @@ _listen = function(event)
 
     // Checking for premature termination
     ((event.timeStamp - endTime) > 4*timeDiff) ? preTermination = true: preTermination = false;
+    
 };
 
 /**
@@ -103,4 +108,3 @@ translate = function()
     rxCode.innerHTML = tmp;
     (preTermination) ? rxTranslated.innerHTML = translatedStr : rxTranslated.innerHTML = translatedStr + " (Premature Termination)";
 };
-
