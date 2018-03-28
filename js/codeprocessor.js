@@ -42,7 +42,7 @@ _listen = function(event)
     // Starting the timer when first encounter a flash
     if (darkness === true && currentBrightness > referenceBrightness + THRESHOLD) {
 
-        // Check if half gap is way longer than the tap
+        // Check if half gap is way longer than the tap, 45 is just to make sure its more accurate
         ((event.timeStamp - endTime) > timeDiff + 45) ? code.push(" ") : code.push("");
 		
         code.push("*");
