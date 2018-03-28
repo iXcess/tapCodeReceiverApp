@@ -43,7 +43,7 @@ _listen = function(event)
     if (darkness === true && currentBrightness > referenceBrightness + THRESHOLD) {
 
         // Check if half gap is way longer than the tap
-        ((event.timeStamp - endTime) > timeDiff + 50) ? code.push(" ") : code.push("");
+        ((event.timeStamp - endTime) > timeDiff + 45) ? code.push(" ") : code.push("");
 		
         code.push("*");
 		output = code.join("");
