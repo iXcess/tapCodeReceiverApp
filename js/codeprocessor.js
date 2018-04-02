@@ -4,11 +4,11 @@
  * 
  * Contributor:
  * Kok Yuan Ting    29269016
- * Lau Lee Yan
+ * Lau Lee Yan      29338328
  * Anamfatimah
- * Liew Ze Ching
+ * Liew Ze Ching    28937031
  *
- * Last modified : 15/3/18
+ * Last modified : 1/4/18
  */
 
 const THRESHOLD = 50;
@@ -21,17 +21,8 @@ let output = '';
 
 _listen = function(event)
 {   
-    let greyscale = [];
-
-    // Converting the RGBA values to greyscale
-    for (let counter = 0; counter < event.detail.data.length; counter +=4 ) {
-        let average = (event.detail.data[counter]+event.detail.data[counter+1]+event.detail.data[counter+2])/3;
-        greyscale.push(average);
-
-    }
-
-    // Get the average of middle 10 pixels
-    currentBrightness = greyscale.slice(195,205).reduce((elem1,elem2) => elem1 +elem2) / 10;
+    
+    currentBrightness = getAveGreyscale(event.detail.data);
 
     // Brightness level remains the same for the first few milliseconds, we 
     // get hold of the brightness level as reference as NO-TAP
@@ -67,6 +58,26 @@ _listen = function(event)
     ((event.timeStamp - endTime) > 4*timeDiff) ? preTermination = true: preTermination = false;
     
 };
+
+/**
+ * Get the average greyscale value by averaging the R,G,B values from the data.
+ * The average value is then returned as a reference brightness
+ */
+getAveGreyscale = function(data) {
+	
+    let greyscale = [];
+
+    // Converting the RGBA values to greyscale
+    for (let counter = 0; counter < data.length; counter +=4 ) {
+        let average = (data[counter]+data[counter+1]+data[counter+2])/3;
+        greyscale.push(average);
+
+    }
+
+    // Return the average of middle 10 pixels
+    return greyscale.slice(195,205).reduce((elem1,elem2) => elem1 +elem2) / 10;
+
+}
 
 /**
  * Resets all the data to be able to for call the listen function once again
