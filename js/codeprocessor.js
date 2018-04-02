@@ -37,8 +37,8 @@ _listen = function(event)
         ((event.timeStamp - endTime) > timeDiff + 45) ? code.push(" ") : code.push("");
 		
         code.push("*");
-		output = code.join("");
-		rxCode.innerHTML = output;
+	output = code.join("");
+	rxCode.innerHTML = output;
 		
         startTime = event.timeStamp;
         hasStarted = true;
